@@ -1,0 +1,4 @@
+with System.IO
+create Main~argc~argv <
+IO.print~"Hello World"
+>

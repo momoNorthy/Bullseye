@@ -11,7 +11,7 @@ enum InstructionSet : int
 	JMP
 };
 
-namespace Bullseye
+namespace bullseye
 {
 	class Instruction
 	{

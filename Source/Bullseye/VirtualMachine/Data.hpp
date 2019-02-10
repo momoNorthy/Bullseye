@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Bullseye
+namespace bullseye
 {
 	class B7Data
 	{

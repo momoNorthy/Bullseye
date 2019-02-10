@@ -3,76 +3,89 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <stdexcept>
-#include <sstream>
 #include <memory>
 
-#include "Lexer/Lexer.hpp"
+#include "lexer/lexer.hpp"
 
-namespace Bullseye
+namespace bullseye
 {
-	class B7Interpreter final
+	namespace script
 	{
-	public:
-		B7Interpreter(const int &arg1, char **arg2)
+		class Interpreter
 		{
-			if (arg1 == 1 || arg1 > 3)
+		public:
+			Interpreter(const int &arg1, char **arg2)
 			{
-				std::cout << "Unexpected number of arguments" << std::endl;
-				std::exit(EXIT_FAILURE);
-				// TODO: To let user input again.
+				// Initialize lexer object.
+				_lexer = std::make_shared<lexer::LexerMain>();
+				// Parse arguments.
+				if (arg1 > 3)
+				{
+					std::cout << "Error: Unexpected number of arguments" << std::endl;
+					std::exit(EXIT_FAILURE);
+				}
+				// Interprete codes line by line
+				else if (arg1 == 1)
+				{
+					std::cout << "bullseye v1.0 (2019/2/10)\nSee https://github.com/bullseye-soft/bullseye/ for more infomation." << std::endl;
+					std::shared_ptr<std::string> p_raw_line = std::make_shared<std::string>();
+					while (1)
+					{
+						std::cout << ">>> " << std::flush;
+						std::getline(std::cin, *p_raw_line);
+						_lexer->analyze(p_raw_line);
+					}
+				}
+				// Interprete source codes from a file by passing arguments.
+				_args_num = arg1;
+				for (int i = 1; i < arg1; i++)
+				{
+					_args.push_back(arg2[i]);
+				}
+				parseArgs();
+				loadFile();
+				_lexer->analyze(_p_raw);
 			}
-			_args_num = arg1;
-			for (int i = 1; i < arg1; i++)
+			void parseArgs()
 			{
-				_args.push_back(arg2[i]);
+				/*
+				*	    bullseye script v1.0 only supports "Interpreter <mode> <filepath>"
+				*	or "Interpreter <filepath>"
+				*	    bullseye script v1.0's Interpreter DO NOT check the arguments.
+				*/
+				if (_args_num == 2)
+				{
+					_path = _args[1];
+				}
+				else
+				{
+					_mode = std::atoi(_args[1].c_str());
+					_path = _args[2];
+				}
 			}
-			parseArgs();
-			loadFile();
-			lexicalAnalysis();
-		}
-		void parseArgs()
-		{
-			/*
-			*	    Bullseye Script v1.0 only supports "B7Interpreter <mode> <filepath>"
-			*	or "B7Interpreter <filepath>"
-			*	    Bullseye Script v1.0's B7Interpreter DO NOT check the arguments. 
-			*/
-			if (_args_num == 2)
+			void loadFile()
 			{
-				_path = _args[1];
+				std::ifstream in(_path, std::ifstream::in);
+				if (!in)
+				{
+					std::cout << "Error: Invalid path" << std::endl;
+					std::exit(EXIT_FAILURE);
+				}
+				_p_raw = std::make_shared<std::vector<std::string>>();
+				std::string buffer;
+				while (std::getline(in, buffer))
+				{
+					_p_raw->push_back(buffer);
+				}
+				std::cout << "Info: The source file has been loaded." << std::endl;
 			}
-			else
-			{
-				_mode = std::atoi(_args[1].c_str());
-				_path = _args[2];
-			}
-		}
-		void loadFile()
-		{
-			std::ifstream in(_path, std::ifstream::in);
-			if (!in)
-			{
-				std::cout << "Invalid path" << std::endl;
-				std::exit(EXIT_FAILURE);
-				// TODO: To let user input again.
-			}
-			std::stringstream ssm;
-			ssm << in.rdbuf();
-			_p_raw = std::make_shared<std::string>(ssm.str());
-			std::cout << "The source file has been loaded." << std::endl;
-		}
-		void lexicalAnalysis()
-		{
-			_lexer = std::make_shared<B7Lexer>(_p_raw);
-		}
-	private:
-		int _args_num = 0;
-		int _mode = 0;
-		std::string _path;
-		std::shared_ptr<std::string> _p_raw;
-		std::vector<std::string> _args;
-
-		std::shared_ptr<B7Lexer> _lexer;
-	};
+		private:
+			int _args_num = 0;
+			int _mode = 0;
+			std::string _path;
+			std::vector<std::string> _args;
+			std::shared_ptr<std::vector<std::string>> _p_raw;
+			std::shared_ptr<lexer::LexerMain> _lexer;
+		};
+	}
 }
